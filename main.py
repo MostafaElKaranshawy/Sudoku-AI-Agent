@@ -42,6 +42,42 @@ def is_valid(board, num, row, col):
 
     return True
 
+def is_valid_board(board):
+    def is_valid_placement(board, num, row, col):
+        # Check row
+        if num in board[row]:
+            return False
+
+        # Check column
+        if num in [board[r][col] for r in range(9)]:
+            return False
+
+        # Check 3x3 grid
+        box_row = (row // 3) * 3
+        box_col = (col // 3) * 3
+        for r in range(box_row, box_row + 3):
+            for c in range(box_col, box_col + 3):
+                if board[r][c] == num:
+                    return False
+
+        return True
+
+    # Iterate through each cell in the board
+    for row in range(9):
+        for col in range(9):
+            num = board[row][col]
+            if num != 0:  # Skip empty cells
+                # Temporarily set the cell to 0 to avoid false positives
+                board[row][col] = 0
+                if not is_valid_placement(board, num, row, col):
+                    return False
+                # Restore the number
+                board[row][col] = num
+    print(board)
+    print("valid")
+    return True
+
+
 class SudokuApp:
     def __init__(self):
         self.main_menu_button = None
@@ -59,8 +95,17 @@ class SudokuApp:
         for widget in self.app.winfo_children():
             widget.destroy()
 
-        ctk.CTkLabel(self.app, text="Sudoku", font=("Arial", 40)).pack(pady=20)
-        mode_frame = ctk.CTkFrame(self.app)
+        self.app.grid_rowconfigure(0, weight=1)
+        self.app.grid_rowconfigure(1, weight=1)
+        self.app.grid_rowconfigure(2, weight=1)
+        self.app.grid_columnconfigure(0, weight=1)
+
+        frame = ctk.CTkFrame(self.app)
+        frame.grid(row=1, column=0, padx=20, pady=20)
+
+        ctk.CTkLabel(frame, text="Sudoku", font=("Arial", 40)).pack(pady=20)
+
+        mode_frame = ctk.CTkFrame(frame)
         mode_label = ctk.CTkLabel(mode_frame, text="Mode", font=("Arial", 24))
         mode_label.pack(pady=20, side="left", padx=10)
 
@@ -68,10 +113,9 @@ class SudokuApp:
         options_menu = ctk.CTkOptionMenu(mode_frame, values=["Random Board", "Custom Board", "User Mode"],
                                          variable=self.game_mode, font=("Arial", 20))
         options_menu.pack(pady=20, side="right", padx=10)
-
         mode_frame.pack(pady=10)
 
-        difficulty_frame = ctk.CTkFrame(self.app)
+        difficulty_frame = ctk.CTkFrame(frame)
         self.difficulty = ctk.StringVar(value="Easy")
 
         difficulty_label = ctk.CTkLabel(difficulty_frame, text="Select Difficulty", font=("Arial", 24))
@@ -79,10 +123,9 @@ class SudokuApp:
         difficulty_menu = ctk.CTkOptionMenu(difficulty_frame, values=["Easy", "Medium", "Hard"],
                                             variable=self.difficulty, font=("Arial", 20))
         difficulty_menu.pack(pady=20, side="right", padx=10)
-
         difficulty_frame.pack(pady=10)
 
-        start_button = ctk.CTkButton(self.app, text="Start", command=self.start_game, font=("Arial", 24))
+        start_button = ctk.CTkButton(frame, text="Start", command=self.start_game, font=("Arial", 24))
         start_button.pack(pady=10)
 
 
@@ -166,14 +209,21 @@ class SudokuApp:
         for widget in self.app.winfo_children():
             widget.destroy()
 
+        self.app.grid_rowconfigure(0, weight=1)
+        self.app.grid_rowconfigure(1, weight=1)
+        self.app.grid_rowconfigure(2, weight=1)
+        self.app.grid_columnconfigure(0, weight=1)
+
+        frame = ctk.CTkFrame(self.app)
+        frame.grid(row=1, column=0, padx=20, pady=20)
+
         self.cells = []
         for i in range(9):
             row = []
             for j in range(9):
                 value = self.board[i][j]
                 color = "black" if value != 0 else "gray"
-                entry = ctk.CTkEntry(self.app, width=80, height=80, justify="center", fg_color=color,
-                                     font=("Arial", 20))
+                entry = ctk.CTkEntry(frame, width=80, height=80, justify="center", fg_color=color, font=("Arial", 20))
                 entry.insert(0, value if value != 0 else "")
                 entry.configure(state="disabled" if value != 0 or mode == 1 else "normal")
                 padx = 10 if j % 3 == 0 else 5
@@ -183,11 +233,18 @@ class SudokuApp:
                 row.append(entry)
             self.cells.append(row)
 
-        self.solve_button = ctk.CTkButton(self.app, text="Solve", command=self.solve_gui, font=("Arial", 24)).grid(row=10, column=0, columnspan=5, pady=10)
-        self.main_menu_button = ctk.CTkButton(self.app, text="Main Menu", command=self.main_menu, font=("Arial", 24)).grid(row=10, column=5, columnspan=5, pady=10)
+        button_frame = ctk.CTkFrame(frame)
+        button_frame.grid(row=10, column=0, columnspan=9, pady=10)
+
+        self.solve_button = ctk.CTkButton(button_frame, text="Solve", command=self.solve_gui, font=("Arial", 24))
+        self.solve_button.grid(row=0, column=0, padx=10)
+        self.main_menu_button = ctk.CTkButton(button_frame, text="Main Menu", command=self.main_menu,
+                                              font=("Arial", 24))
+        self.main_menu_button.grid(row=0, column=1, padx=10)
 
         if mode == 2:
-            ctk.CTkLabel(self.app, text="Input your board representation, then click Solve").grid(row=11, column=0, columnspan=9, pady=10)
+            ctk.CTkLabel(frame, text="Input your board representation, then click Solve").grid(row=11, column=0,
+                                                                                               columnspan=9, pady=10)
 
     def solve_gui(self):
         solved_board = np.copy(self.board)
@@ -195,6 +252,11 @@ class SudokuApp:
             for j in range(9):
                 if self.cells[i][j].get().isdigit():
                     self.board[i][j] = int(self.cells[i][j].get())
+
+        if not is_valid_board(self.board):
+            messagebox.showerror(title="Invalid Board", message="Each number in the board cannot be repeated in a row, "
+                                                               "a column or in a 3x3 grid")
+            return
 
         if solve_sudoku(self.board):
             for i in range(9):
@@ -209,8 +271,8 @@ class SudokuApp:
 
                     else:
                         self.cells[i][j].configure(fg_color="black")
-            self.solve_button = ctk.CTkButton(self.app, text="New Game", command=self.start_game, font=("Arial", 24)).grid(
-                row=10, column=0, columnspan=5, pady=10)
+
+            self.solve_button.configure(text="New Game", command=self.start_game)
         else:
             messagebox.showerror("Error", "No solution exists for the provided board.")
 
