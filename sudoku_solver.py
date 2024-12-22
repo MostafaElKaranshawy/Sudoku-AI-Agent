@@ -4,12 +4,11 @@ import copy
 class SudokuSolverCSP:
     def __init__(self, puzzle):
         self.puzzle = puzzle  # 9x9 grid with 0 for empty cells
-        self.variables = [(r, c) for r in range(9) for c in range(9)]
-        self.domains = self.initialize_domains()
-        self.constraints = self.generate_constraints()
+        self.variables = [(r, c) for r in range(9) for c in range(9)]  # 81 variables (positions)
+        self.domains = self.set_domains()  # domain of each variable (initially from 1->9) if not assigned
+        self.arcs = self.generate_arcs() # all arcs between variables
 
-    def initialize_domains(self):
-        """Initialize domains for all cells."""
+    def set_domains(self):
         domains = {}
         for r in range(9):
             for c in range(9):
@@ -19,44 +18,44 @@ class SudokuSolverCSP:
                     domains[(r, c)] = set(range(1, 10))
         return domains
 
-    def generate_constraints(self):
-        """Generate arcs (constraints) for rows, columns, and subgrids."""
-        # constraints = []
-        constraints = set()
+    def generate_arcs(self):
+        # rows
+        arcs = set()
         for r in range(9):
             for c1 in range(9):
                 for c2 in range(c1 + 1, 9):
-                    constraints.add(((r, c1), (r, c2)))
-                    constraints.add(((r, c2), (r, c1)))
+                    arcs.add(((r, c1), (r, c2)))
+                    arcs.add(((r, c2), (r, c1)))
+
+        # columns
         for c in range(9):
             for r1 in range(9):
                 for r2 in range(r1 + 1, 9):
-                    constraints.add(((r1, c), (r2, c)))
-                    constraints.add(((r2, c), (r1, c)))
+                    arcs.add(((r1, c), (r2, c)))
+                    arcs.add(((r2, c), (r1, c)))
 
+        # boxes
         for box_r in range(3):
             for box_c in range(3):
                 cells = [(box_r * 3 + r, box_c * 3 + c) for r in range(3) for c in range(3)]
                 for i in range(len(cells)):
                     for j in range(i + 1, len(cells)):
-                        constraints.add((cells[i], cells[j]))
-                        constraints.add((cells[j], cells[i]))
+                        arcs.add((cells[i], cells[j]))
+                        arcs.add((cells[j], cells[i]))
 
-        return constraints
+        return arcs
 
-    def is_consistent(self, x, value, y):
-        """Check if assigning value to x is consistent with y."""
+    def is_consistent(self, value, y):
         if value in self.domains[y]:
             return len(self.domains[y]) > 1
         return True
 
 
-    # does the domain reduction
+    # does the domain reduction if the value is not consistent
     def revise(self, x, y):
-        """Revise the domain of x based on y, printing arcs before and after deletions."""
         revised = False
-        for value in set(self.domains[x]):  # Use a copy of the domain to avoid issues while iterating
-            if not self.is_consistent(x, value, y):
+        for value in set(self.domains[x]):
+            if not self.is_consistent(value, y):
                 # Print the arcs before deletion
                 print(f"Before deletion:")
                 print(f"{x} -> {self.domains[x]}")
@@ -73,9 +72,9 @@ class SudokuSolverCSP:
                 print()
         return revised
 
+
     def apply_arc_consistency(self):
-        """Enforce arc consistency for all arcs."""
-        queue = list(self.constraints)
+        queue = list(self.arcs)
         while queue:
             x, y = queue.pop(0)
             if self.revise(x, y):
@@ -88,8 +87,8 @@ class SudokuSolverCSP:
 
         return True
 
+    # get all neighbors of a cell (row, column, box)
     def get_neighbors(self, cell):
-        """Get all neighbors of a cell."""
         r, c = cell
         neighbors = set()
         for i in range(9):
@@ -104,23 +103,28 @@ class SudokuSolverCSP:
                     neighbors.add((i, j))
         return neighbors
 
-    def assign_singletons(self):
-        """Assign values to cells with singleton domains."""
-        for cell, domain in self.domains.items():
-            if len(domain) == 1:
-                self.puzzle[cell[0]][cell[1]] = list(domain)[0]
+    # def assign_singletons(self):
+    #     """Assign values to cells with singleton domains."""
+    #     for cell, domain in self.domains.items():
+    #         if len(domain) == 1:
+    #             self.puzzle[cell[0]][cell[1]] = list(domain)[0]
+
+    def fill_puzzle(self):
+        for position, domain in self.domains.items():
+            self.puzzle[position[0]][position[1]] = next(iter(domain))
+
 
     def solve(self):
-        """Solve the Sudoku puzzle."""
         if not self.apply_arc_consistency():
             return False
-        self.assign_singletons() # comment this
-        # result = self.backtrack()
-        # if result:
-        #    self.assign_singletons()
-        #    return True
-        # return False
-        return self.backtrack()
+
+        result = self.backtrack()
+        if result:
+           self.fill_puzzle()
+           return True
+
+        return False
+        # return self.backtrack()
 
     def backtrack(self):
 
@@ -132,21 +136,24 @@ class SudokuSolverCSP:
             return False
 
         # Select unassigned variable with minimum remaining values
-        var = min((v for v in self.variables if len(self.domains[v]) > 1), key=lambda v: len(self.domains[v]))
+        unassigned_vars = [var for var in self.variables if len(self.domains[var]) > 1]
+        var = min(unassigned_vars, key=lambda var: len(self.domains[var]))
 
+        # var = min((v for v in self.variables if len(self.domains[v]) > 1), key=lambda v: len(self.domains[v]))
+
+        # Shuffle the values to be assigned to the variable to generate random solutions if multiple solutions exist
         to_be_shuffled_values = list(self.domains[var])
         random.shuffle(to_be_shuffled_values)
 
         # for value in self.domains[var]:
         for value in to_be_shuffled_values:
-            snapshot = copy.deepcopy(self.domains)
+            old_domains = copy.deepcopy(self.domains)
             self.domains[var] = {value}
             if self.apply_arc_consistency():
-                self.assign_singletons()  # comment this
-
                 if self.backtrack():
                     return True
-            self.domains = snapshot
+
+            self.domains = old_domains
         return False
 
 # Example usage
