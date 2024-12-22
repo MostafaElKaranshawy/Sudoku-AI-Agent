@@ -1,3 +1,4 @@
+from time import sleep
 import customtkinter as ctk
 from tkinter import messagebox
 import numpy as np
@@ -103,6 +104,7 @@ class SudokuApp:
         self.main_menu()
 
     def main_menu(self):
+        self.clear_board()
         for widget in self.app.winfo_children():
             widget.destroy()
 
@@ -159,10 +161,11 @@ class SudokuApp:
             self.handle_user_mode()
 
     def generate_board(self):
-        # self.update_idletasks()
+        self.app.update()
         self.clear_board()
-        # self.update_idletasks()
-        # Generate a full valid board
+
+        self.app.update()
+        # Geewerate a full valid board
         self.generate_full_board()
 
         # Remove numbers based on difficulty while ensuring a unique solution
@@ -283,6 +286,7 @@ class SudokuApp:
             return
 
         if solve_sudoku(self.board):
+            self.solve_button.configure(state="disabled")
             for i in range(9):
                 for j in range(9):
                     if solved_board[i][j] == 0:  # Only highlight solved cells
@@ -292,11 +296,12 @@ class SudokuApp:
                         self.cells[i][j].insert(0, self.board[i][j])
                         self.cells[i][j].configure(fg_color="green")
                         self.cells[i][j].configure(state="disabled")
-
+                        self.app.update()
+                        sleep(0.1)
                     else:
                         self.cells[i][j].configure(fg_color="black")
 
-            self.solve_button.configure(text="New Game", command=self.start_game)
+            self.solve_button.configure(text="New Game", command=self.start_game, state="normal")
         else:
             messagebox.showerror("Error", "No solution exists for the provided board.")
 
@@ -305,12 +310,11 @@ class SudokuApp:
         solved_board = np.copy(self.board)
         solve_sudoku(solved_board)
         def validate_input(event, row, col):
-            print(solved_board)
 
             cell = event.widget
 
             value = cell.get()
-            print(value)
+
             # Reset board cell if input is invalid
             if value == '':
                 self.cells[row][col].configure(fg_color="gray")
@@ -320,7 +324,6 @@ class SudokuApp:
             if not 1 <= int(value) <= 9:
                 self.cells[row][col].configure(fg_color="red")
                 self.board[row][col] = 0
-                print("error")
                 return
 
             num = int(value)
@@ -330,16 +333,21 @@ class SudokuApp:
             if num != solved_board[row][col]:
                 self.cells[row][col].configure(fg_color="red")
                 self.board[row][col] = 0  # Reset the cell in the board
-                print("wrong")
+
             else:
+
                 self.cells[row][col].configure(fg_color="green")
                 self.cells[row][col].configure(state="disabled")
 
-                print("true")
                 # Check if the board is complete and valid
                 if is_board_complete_and_valid(self.board):
                     messagebox.showinfo("Congratulations!", "You successfully completed the Sudoku!")
-        is_board_complete_and_valid(self.board)
+        if is_board_complete_and_valid(self.board):
+            if messagebox.askyesno(title="Game Finished",
+                                   message="You have solved the Sudoku!\nDoy you want to play again?"):
+                self.start_game()
+            else:
+                self.main_menu()
         for i in range(9):
             for j in range(9):
                     self.cells[i][j].bind("<KeyRelease>", partial(validate_input,row=i, col=j))
