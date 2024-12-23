@@ -91,6 +91,7 @@ def is_board_complete_and_valid(board):
                 return False
             if not is_valid(board, board[i][j], i, j):  # Validate the current value
                 return False
+    print("Game Ended")
     return True
 
 
@@ -353,18 +354,18 @@ class SudokuApp:
 
     def handle_user_mode(self):
         solved_board = self.generate_board()
+        print(solved_board)
         self.show_board(mode=3)
 
         self.solve_button.configure(state="disabled")
         def validate_input(event, row, col):
-
             cell = event.widget
-
             value = cell.get()
 
             # Reset board cell if input is invalid
             if not value.isdigit():
                 self.cells[row][col].delete(0, "end")
+                self.cells[row][col].configure(fg_color="gray")
                 self.board[row][col] = 0
                 return
             if value == '':
@@ -386,12 +387,10 @@ class SudokuApp:
                 self.board[row][col] = 0  # Reset the cell in the board
 
             else:
-
                 self.cells[row][col].configure(fg_color="green")
                 self.cells[row][col].configure(state="disabled")
 
-                # Check if the board is complete and valid
-            if is_board_complete_and_valid(self.board):
+            if self.board == solved_board:
                 if messagebox.askyesno(title="Game Finished",
                                        message="You have solved the Sudoku!\nDoy you want to play again?"):
                     self.start_game()
