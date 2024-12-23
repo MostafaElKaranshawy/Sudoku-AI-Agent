@@ -188,14 +188,14 @@ puzzle2 = [
 ]
 
 
-solver = SudokuSolverCSP(puzzle)
-if solver.solve():
-    print("Sudoku solved:")
-    for row in solver.puzzle:
-        print(row)
-    solver.display_steps()
-else:
-    print("No solution exists.")
+# solver = SudokuSolverCSP(puzzle)
+# if solver.solve():
+#     print("Sudoku solved:")
+#     for row in solver.puzzle:
+#         print(row)
+#     solver.display_steps()
+# else:
+#     print("No solution exists.")
 
 #  Mode 1
 #    easy => 3x

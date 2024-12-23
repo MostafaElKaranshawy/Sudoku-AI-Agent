@@ -29,11 +29,12 @@ def solve_sudoku(board):
         return
     solver = SudokuSolverCSP(board)
     if solver.solve():
-        board = solver.puzzle
-        print(board)
-        return True
+        # board = solver.puzzle
+        steps = solver.steps_queue
+        # print(board)
+        return True, steps
     else:
-        return False
+        return False, []
 
 def count_non_empty(board):
     count = 0
@@ -286,7 +287,6 @@ class SudokuApp:
         else:
             return
     def solve_gui(self):
-        solved_board = np.copy(self.board)
         for i in range(9):
             for j in range(9):
                 if self.cells[i][j].get().isdigit():
@@ -297,22 +297,25 @@ class SudokuApp:
                                                                "a column or in a 3x3 grid")
             return
 
-        if solve_sudoku(self.board):
+        un_solved_board = copy.deepcopy(self.board)
+        solved, steps = solve_sudoku(self.board)
+        if solved:
             self.solve_button.configure(state="disabled")
             for i in range(9):
                 for j in range(9):
-                    if solved_board[i][j] == 0:  # Only highlight solved cells
-                        self.cells[i][j].delete(0, "end")
-                        self.cells[i][j].configure(state="normal")
-
-                        self.cells[i][j].insert(0, self.board[i][j])
-                        self.cells[i][j].configure(fg_color="green")
-                        self.cells[i][j].configure(state="disabled")
-                        self.app.update()
-                        sleep(0.1)
-                    else:
+                    if un_solved_board[i][j] != 0 and un_solved_board[i][j] != ' ':  # Only highlight solved cells
                         self.cells[i][j].configure(fg_color="black")
                         self.cells[i][j].configure(state="disabled")
+            for step in steps:
+                (i, j) = step[0]
+                self.cells[i][j].delete(0, "end")
+                self.cells[i][j].configure(state="normal")
+
+                self.cells[i][j].insert(0, self.board[i][j])
+                self.cells[i][j].configure(fg_color="green")
+                self.cells[i][j].configure(state="disabled")
+                self.app.update()
+                sleep(0.1)
 
             self.solve_button.configure(text="New Game", command=self.start_game, state="normal")
         else:
