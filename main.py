@@ -1,3 +1,4 @@
+import copy
 from time import sleep
 import customtkinter as ctk
 from tkinter import messagebox
@@ -23,20 +24,24 @@ puzzle2 = [
 
 # Sudoku Solver using Backtracking Algorithm
 def solve_sudoku(board):
-    empty = find_empty(board)
-    if not empty:
+    if count_non_empty(board) < 18:
+        messagebox.showerror(title="Invalid Board", message="Board must have at least 18 filled cells.")
+        return
+    solver = SudokuSolverCSP(board)
+    if solver.solve():
+        board = solver.puzzle
+        print(board)
         return True
-    row, col = empty
+    else:
+        return False
 
-    for num in range(1, 10):
-        if is_valid(board, num, row, col):
-            board[row][col] = num
-            if solve_sudoku(board):
-                return True
-            board[row][col] = 0
-
-    return False
-
+def count_non_empty(board):
+    count = 0
+    for i in range(9):
+        for j in range(9):
+            if board[i][j] != 0:
+                count += 1
+    return count
 def find_empty(board):
     for i in range(9):
         for j in range(9):
@@ -163,18 +168,7 @@ class SudokuApp:
                                     font=("Arial", 24), fg_color="red")
         exit_button.pack(pady=10)
 
-        solver = SudokuSolverCSP(puzzle2)
 
-    #   for loop until at least 18
-    #   input =>  (0 , 4)   6
-    #
-    #   old_domains = copy.deepcopy(solver.domains)
-    #
-    #   solver.domains[(0 , 4)] = {6}
-    #   solver.puzzle[0][4] = 6
-    #   solver.apply_arc_consistency()
-    #   if False:
-    #      solver.domains = old_domains
 
 
     # if value was 0 =>>    solver.domains[(0 , 4)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
@@ -188,6 +182,7 @@ class SudokuApp:
         elif self.game_mode.get() == "Custom Board":
             self.clear_board()
             self.show_board(mode=2)
+            self.handle_user_input_mode()
         elif self.game_mode.get() == "User Mode":
             self.generate_board()
             self.show_board(mode=3)
@@ -199,10 +194,13 @@ class SudokuApp:
 
         self.app.update()
         # Geewerate a full valid board
-        self.generate_full_board()
+        # self.generate_full_board()
+        solver = SudokuSolverCSP(self.board)
+        solver.solve()
+        self.board = solver.puzzle
 
         # Remove numbers based on difficulty while ensuring a unique solution
-        difficulty_map = {"Easy": 30, "Medium": 40, "Hard": 50}
+        difficulty_map = {"Easy": 54, "Medium": 36, "Hard": 18}
         cells_to_remove = 81 - difficulty_map[self.difficulty.get()]
         removed_cells = []
 
@@ -218,25 +216,6 @@ class SudokuApp:
                 else:
                     self.board[row][col] = temp
 
-    def generate_full_board(self):
-        def fill_board(board):
-            empty = find_empty(board)
-            if not empty:
-                return True
-            row, col = empty
-
-            numbers = list(range(1, 10))
-            np.random.shuffle(numbers)
-            for num in numbers:
-                if is_valid(board, num, row, col):
-                    board[row][col] = num
-                    if fill_board(board):
-                        return True
-                    board[row][col] = 0
-
-            return False
-
-        fill_board(self.board)
 
     def count_solutions(self, board):
         # Helper function to count the number of solutions
@@ -333,10 +312,51 @@ class SudokuApp:
                         sleep(0.1)
                     else:
                         self.cells[i][j].configure(fg_color="black")
+                        self.cells[i][j].configure(state="disabled")
 
             self.solve_button.configure(text="New Game", command=self.start_game, state="normal")
         else:
             messagebox.showerror("Error", "No solution exists for the provided board.")
+    def handle_user_input_mode(self):
+
+        self.solve_button.configure(state="disabled")
+        def validate_input(event, row, col):
+
+            cell = event.widget
+
+            value = cell.get()
+
+            temp_board = np.copy(self.board)
+            solver = SudokuSolverCSP(temp_board)
+
+            if value == '':
+                solver.domains[(row, col)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+                self.cells[row][col].configure(fg_color="grey")
+                if count_non_empty(self.board) < 18:
+                    self.solve_button.configure(state="disabled")
+                return
+            if not 1 <= int(value) <= 9:
+                self.cells[row][col].configure(fg_color="red")
+                self.board[row][col] = 0
+                return
+
+            old_domains = copy.deepcopy(solver.domains)
+            solver.domains[(row, col)] = {int(value)}
+            if solver.apply_arc_consistency():
+                self.board[row][col] = int(value)
+                self.cells[row][col].configure(fg_color="grey")
+                if count_non_empty(self.board) >= 18:
+                    self.solve_button.configure(state="normal")
+
+            else:
+                solver.domains = old_domains
+                self.cells[row][col].configure(state="normal", fg_color="red")
+                messagebox.showerror(title="Invalid Board", message="The provided board is inconsistent.")
+                self.solve_button.configure(state="disabled")
+        for i in range(9):
+            for j in range(9):
+                    self.cells[i][j].bind("<KeyRelease>", partial(validate_input,row=i, col=j))
+
 
     def handle_user_mode(self):
         self.solve_button.configure(state="disabled")
