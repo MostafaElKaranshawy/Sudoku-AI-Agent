@@ -80,28 +80,6 @@ def is_valid_board(board):
                 board[row][col] = num
     return True
 
-
-def is_board_complete_and_valid(board):
-    """
-    Check if the board is complete and valid.
-    """
-    for i in range(9):
-        for j in range(9):
-            if board[i][j] == 0:  # If there's any empty cell, the board is not complete
-                return False
-            if not is_valid(board, board[i][j], i, j):  # Validate the current value
-                return False
-    print("Game Ended")
-    return True
-
-
-def exit():
-    if messagebox.askyesno(title="Exit Game", message="Are you sure you want to exit?"):
-        exit()
-    else:
-        return
-
-
 class SudokuApp:
     def __init__(self):
         self.cells = None
@@ -180,7 +158,7 @@ class SudokuApp:
         start_button.pack(pady=10)
 
         exit_button = ctk.CTkButton(
-            frame, text="Exit Game", command=exit,
+            frame, text="Exit Game", command=self.exit,
             font=("Arial", 24), fg_color="red"
         )
         exit_button.pack(pady=10)
@@ -404,6 +382,11 @@ class SudokuApp:
     def run(self):
         self.app.mainloop()
 
+    def exit(self):
+        if messagebox.askyesno(title="Exit Game", message="Are you sure you want to exit?"):
+            exit()
+        else:
+            return
 
 if __name__ == "__main__":
     app = SudokuApp()
