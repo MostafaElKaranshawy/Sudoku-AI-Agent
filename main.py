@@ -116,46 +116,72 @@ class SudokuApp:
         self.main_menu()
 
     def main_menu(self):
-        # self.clear_board()
+        # Clear previous widgets
         for widget in self.app.winfo_children():
             widget.destroy()
 
+        # Configure grid layout
         self.app.grid_rowconfigure(0, weight=1)
         self.app.grid_rowconfigure(1, weight=1)
         self.app.grid_rowconfigure(2, weight=1)
         self.app.grid_columnconfigure(0, weight=1)
 
+        # Main frame
         frame = ctk.CTkFrame(self.app)
         frame.grid(row=1, column=0, padx=20, pady=20)
 
         ctk.CTkLabel(frame, text="Sudoku", font=("Arial", 40)).pack(pady=20)
 
+        # Mode selection frame
         mode_frame = ctk.CTkFrame(frame, width=500)
         mode_label = ctk.CTkLabel(mode_frame, text="Mode", font=("Arial", 24))
         mode_label.pack(pady=20, side="left", padx=10)
 
         self.game_mode = ctk.StringVar(value="Random Board")
-        options_menu = ctk.CTkOptionMenu(mode_frame, values=["Random Board", "Custom Board", "User Mode"],
-                                         variable=self.game_mode, font=("Arial", 20))
+        options_menu = ctk.CTkOptionMenu(
+            mode_frame,
+            values=["Random Board", "Custom Board", "User Mode"],
+            variable=self.game_mode,
+            font=("Arial", 20)
+        )
         options_menu.pack(pady=20, side="right", padx=10)
         mode_frame.pack(pady=10)
 
+        # Difficulty frame
         difficulty_frame = ctk.CTkFrame(frame, width=400)
         self.difficulty = ctk.StringVar(value="Easy")
 
         difficulty_label = ctk.CTkLabel(difficulty_frame, text="Select Difficulty", font=("Arial", 24))
         difficulty_label.pack(pady=10, side="left", padx=10)
-        difficulty_menu = ctk.CTkOptionMenu(difficulty_frame, values=["Easy", "Medium", "Hard"],
-                                            variable=self.difficulty, font=("Arial", 20))
+
+        difficulty_menu = ctk.CTkOptionMenu(
+            difficulty_frame,
+            values=["Easy", "Medium", "Hard"],
+            variable=self.difficulty,
+            font=("Arial", 20)
+        )
         difficulty_menu.pack(pady=20, side="right", padx=10)
         difficulty_frame.pack(pady=10)
+        # Dynamically update visibility of difficulty_frame
+        def update_difficulty_visibility(*args):
+            if self.game_mode.get() in ["Random Board", "User Mode"]:
+                difficulty_menu.configure(state="normal")
+            else:
+                difficulty_menu.configure(state="disabled")
+        self.game_mode.trace("w", update_difficulty_visibility)
+        update_difficulty_visibility()  # Initialize visibility based on default mode
 
-        start_button = ctk.CTkButton(frame, text="Start Game", command=self.start_game,
-                                     font=("Arial", 24), fg_color="green")
+        # Buttons
+        start_button = ctk.CTkButton(
+            frame, text="Start Game", command=self.start_game,
+            font=("Arial", 24), fg_color="green"
+        )
         start_button.pack(pady=10)
 
-        exit_button = ctk.CTkButton(frame, text="Exit Game", command=exit,
-                                    font=("Arial", 24), fg_color="red")
+        exit_button = ctk.CTkButton(
+            frame, text="Exit Game", command=exit,
+            font=("Arial", 24), fg_color="red"
+        )
         exit_button.pack(pady=10)
 
     def start_game(self):
@@ -287,6 +313,11 @@ class SudokuApp:
 
             value = cell.get()
 
+            if not value.isdigit():
+                self.cells[row][col].delete(0, "end")
+                self.board[row][col] = 0
+                return
+
             temp_board = copy.deepcopy(self.board)
             solver = SudokuSolverCSP(temp_board)
 
@@ -332,6 +363,10 @@ class SudokuApp:
             value = cell.get()
 
             # Reset board cell if input is invalid
+            if not value.isdigit():
+                self.cells[row][col].delete(0, "end")
+                self.board[row][col] = 0
+                return
             if value == '':
                 self.cells[row][col].configure(fg_color="gray")
                 self.board[row][col] = 0
