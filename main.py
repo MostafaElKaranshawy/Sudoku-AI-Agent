@@ -181,15 +181,14 @@ class SudokuApp:
         self.clear_board()
 
         self.app.update()
-        # Geewerate a full valid board
-        # self.generate_full_board()
+
         solver = SudokuSolverCSP(self.board)
         solver.solve()
         self.board = solver.puzzle
         solved_board = copy.deepcopy(self.board)
 
         # Remove numbers based on difficulty while ensuring a unique solution
-        difficulty_map = {"Easy": 54, "Medium": 36, "Hard": 18}
+        difficulty_map = {"Easy": 38, "Medium": 30, "Hard": 20}
         cells_to_remove = 81 - difficulty_map[self.difficulty.get()]
         all_cells = [(row, col) for row in range(9) for col in range(9)]
 
@@ -292,23 +291,22 @@ class SudokuApp:
 
             value = cell.get()
 
-            if not value.isdigit():
-                self.cells[row][col].delete(0, "end")
-                self.board[row][col] = 0
-                return
-
             temp_board = copy.deepcopy(self.board)
             solver = SudokuSolverCSP(temp_board)
 
-            if value == '':
-                solver.domains[(row, col)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
-                self.cells[row][col].configure(fg_color="grey")
-                if count_non_empty(self.board) < 18:
-                    self.solve_button.configure(state="disabled")
+            if not value.isdigit():
+                self.cells[row][col].delete(0, "end")
+                self.board[row][col] = 0
+                if value == '':
+                    solver.domains[(row, col)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+                    self.cells[row][col].configure(fg_color="grey")
+                    self.board[row][col] = 0
+                    if count_non_empty(self.board) < 18:
+                        self.solve_button.configure(state="disabled")
                 return
+
             if not 1 <= int(value) <= 9:
-                self.cells[row][col].configure(fg_color="red")
-                self.solve_button.configure(state="disabled")
+                self.cells[row][col].delete(0, "end")
                 self.board[row][col] = 0
                 return
 
@@ -324,6 +322,8 @@ class SudokuApp:
                 solver.domains = old_domains
                 self.cells[row][col].configure(state="normal", fg_color="red")
                 messagebox.showerror(title="Invalid Board", message="The provided board is inconsistent.")
+                self.cells[row][col].configure(state="normal", fg_color="grey")
+                self.cells[row][col].delete(0, "end")
                 self.solve_button.configure(state="disabled")
         for i in range(9):
             for j in range(9):
@@ -370,7 +370,7 @@ class SudokuApp:
 
             if self.board == solved_board:
                 if messagebox.askyesno(title="Game Finished",
-                                       message="You have solved the Sudoku!\nDoy you want to play again?"):
+                                       message="You have solved the Sudoku!\nDo you want to play again?"):
                     self.start_game()
                 else:
                     self.main_menu()
