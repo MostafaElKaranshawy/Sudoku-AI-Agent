@@ -332,7 +332,7 @@ class SudokuApp:
 
     def handle_user_mode(self):
         solved_board = self.generate_board()
-        print(solved_board)
+
         self.show_board(mode=3)
         self.solve_button.configure(state="disabled")
         def validate_input(event, row, col):
