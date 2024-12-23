@@ -8,6 +8,7 @@ class SudokuSolverCSP:
         self.domains = self.set_domains()  # domain of each variable (initially from 1->9) if not assigned
         self.arcs = self.generate_arcs() # all arcs between variables
         self.steps_queue = []  # queue to store the steps of the solution
+        self.solving = False
 
     def set_domains(self):
         domains = {}
@@ -58,19 +59,21 @@ class SudokuSolverCSP:
         for value in set(self.domains[x]):
             if not self.is_consistent(value, y):
                 # Print the arcs before deletion
-                print(f"Before deletion:")
-                print(f"{x} -> {self.domains[x]}")
-                print(f"{y} -> {self.domains[y]}")
-                print(f"Inconsistent value being removed from {x}: {value}")
+                if self.solving:
+                    print(f"Before deletion:")
+                    print(f"{x} -> {self.domains[x]}")
+                    print(f"{y} -> {self.domains[y]}")
+                    print(f"Inconsistent value being removed from {x}: {value}")
 
                 self.domains[x].remove(value)
                 revised = True
 
-                # Print the arcs after deletion
-                print(f"After deletion:")
-                print(f"{x} -> {self.domains[x]}")
-                print(f"{y} -> {self.domains[y]}")
-                print()
+                if self.solving:
+                    # Print the arcs after deletion
+                    print(f"After deletion:")
+                    print(f"{x} -> {self.domains[x]}")
+                    print(f"{y} -> {self.domains[y]}")
+                    print()
 
                 if len(self.domains[x]) == 1:  # Domain reduced to a single value
                     # Add the variable and its fixed value to the queue
@@ -185,42 +188,3 @@ puzzle = [
     [3, 0, 0, 0, 0, 0, 4, 0, 9],
     [0, 2, 4, 0, 3, 5, 0, 0, 0]
 ]
-
-puzzle2 = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0]
-]
-
-
-# solver = SudokuSolverCSP(puzzle)
-# if solver.solve():
-#     print("Sudoku solved:")
-#     for row in solver.puzzle:
-#         print(row)
-#     solver.display_steps()
-# else:
-#     print("No solution exists.")
-
-#  Mode 1
-#    easy => 3x
-#   medium => 2x
-#   hard => 18
-#
-#
-#  Mode 2
-#
-#
-#
-#
-#
-#  Mode 3 bonus
-#
-#
-#

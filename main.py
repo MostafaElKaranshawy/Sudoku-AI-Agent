@@ -1,6 +1,6 @@
 import copy
 import random
-from time import sleep
+from time import sleep, time
 import customtkinter as ctk
 from tkinter import messagebox
 import numpy as np
@@ -14,10 +14,13 @@ def solve_sudoku(board):
         messagebox.showerror(title="Invalid Board", message="Board must have at least 18 filled cells.")
         return
     solver = SudokuSolverCSP(board)
+    solver.solving = True
+    start_time = time()
     if solver.solve():
-        # board = solver.puzzle
         steps = solver.steps_queue
-        # print(board)
+
+        end_time = time()
+        print("Time Taken: ", str((end_time - start_time)*1000) + " ms")
         return True, steps
     else:
         return False, []
@@ -29,12 +32,6 @@ def count_non_empty(board):
             if board[i][j] != 0:
                 count += 1
     return count
-def find_empty(board):
-    for i in range(9):
-        for j in range(9):
-            if board[i][j] == 0:
-                return i, j
-    return None
 
 def is_valid(board, num, row, col):
     for i in range(9):
@@ -81,8 +78,6 @@ def is_valid_board(board):
                     return False
                 # Restore the number
                 board[row][col] = num
-    print(board)
-    print("valid")
     return True
 
 
@@ -99,16 +94,24 @@ def is_board_complete_and_valid(board):
     return True
 
 
+def exit():
+    if messagebox.askyesno(title="Exit Game", message="Are you sure you want to exit?"):
+        exit()
+    else:
+        return
+
+
 class SudokuApp:
     def __init__(self):
+        self.cells = None
         self.main_menu_button = None
         self.solve_button = None
         self.difficulty = None
         self.game_mode = None
         self.app = ctk.CTk()
         self.app.title("Sudoku")
-        self.app.geometry("800x800")
-        self.board = np.zeros((9, 9), dtype=int)
+        self.app.geometry("1000x1000")
+        self.board = [[0 for _ in range(9)] for _ in range(9)]
 
         self.main_menu()
 
@@ -151,19 +154,9 @@ class SudokuApp:
                                      font=("Arial", 24), fg_color="green")
         start_button.pack(pady=10)
 
-        exit_button = ctk.CTkButton(frame, text="Exit Game", command=self.exit,
+        exit_button = ctk.CTkButton(frame, text="Exit Game", command=exit,
                                     font=("Arial", 24), fg_color="red")
         exit_button.pack(pady=10)
-
-
-
-
-    # if value was 0 =>>    solver.domains[(0 , 4)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
-
-            # solution_count = self.count_solutions(temp_board)
-
-            # if solution_count != 1:
-            #     self.board[row][col] = temp  # Revert if not a valid removal
 
     def start_game(self):
 
@@ -203,28 +196,8 @@ class SudokuApp:
             self.board[row][col] = 0
         return solved_board
 
-    def count_solutions(self, board):
-        # Helper function to count the number of solutions
-        def backtrack(board):
-            empty = find_empty(board)
-            if not empty:
-                return 1
-            row, col = empty
-
-            count = 0
-            for num in range(1, 10):
-                if is_valid(board, num, row, col):
-                    board[row][col] = num
-                    count += backtrack(board)
-                    board[row][col] = 0
-                    if count > 1:  # Stop early if more than one solution is found
-                        break
-            return count
-
-        return backtrack(board)
-
     def clear_board(self):
-        self.board = np.zeros((9, 9), dtype=int)
+        self.board = [[0 for _ in range(9)] for _ in range(9)]
 
     def show_board(self, mode):
         for widget in self.app.winfo_children():
@@ -244,7 +217,7 @@ class SudokuApp:
             for j in range(9):
                 value = self.board[i][j]
                 color = "black" if value != 0 else "gray"
-                entry = ctk.CTkEntry(frame, width=60, height=60, justify="center", fg_color=color, font=("Arial", 20))
+                entry = ctk.CTkEntry(frame, width=80, height=80, justify="center", fg_color=color, font=("Arial", 20))
                 entry.insert(0, value if value != 0 else "")
                 entry.configure(state="disabled" if value != 0 or mode == 1 else "normal")
                 padx = 12 if j % 3 == 0 else 3
@@ -304,7 +277,7 @@ class SudokuApp:
             self.solve_button.configure(text="New Game", command=self.start_game, state="normal")
         else:
             messagebox.showerror("Error", "No solution exists for the provided board.")
-        print(temp)
+
     def handle_user_input_mode(self):
 
         self.solve_button.configure(state="disabled")
@@ -396,11 +369,7 @@ class SudokuApp:
 
     def run(self):
         self.app.mainloop()
-    def exit(self):
-        if messagebox.askyesno(title="Exit Game", message="Are you sure you want to exit?"):
-            exit()
-        else:
-            return
+
 
 if __name__ == "__main__":
     app = SudokuApp()
