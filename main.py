@@ -10,8 +10,8 @@ from sudoku_solver import SudokuSolverCSP
 
 # Sudoku Solver using Backtracking Algorithm
 def solve_sudoku(board):
-    if count_non_empty(board) < 18:
-        messagebox.showerror(title="Invalid Board", message="Board must have at least 18 filled cells.")
+    if count_non_empty(board) < 20:
+        messagebox.showerror(title="Invalid Board", message="Board must have at least 20 filled cells.")
         return
     solver = SudokuSolverCSP(board)
     solver.solving = True
@@ -301,7 +301,7 @@ class SudokuApp:
                     solver.domains[(row, col)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
                     self.cells[row][col].configure(fg_color="grey")
                     self.board[row][col] = 0
-                    if count_non_empty(self.board) < 18:
+                    if count_non_empty(self.board) < 20:
                         self.solve_button.configure(state="disabled")
                 return
 
@@ -315,7 +315,7 @@ class SudokuApp:
             if solver.apply_arc_consistency():
                 self.board[row][col] = int(value)
                 self.cells[row][col].configure(fg_color="grey")
-                if count_non_empty(self.board) >= 18:
+                if count_non_empty(self.board) >= 20:
                     self.solve_button.configure(state="normal")
 
             else:
@@ -334,7 +334,6 @@ class SudokuApp:
         solved_board = self.generate_board()
         print(solved_board)
         self.show_board(mode=3)
-
         self.solve_button.configure(state="disabled")
         def validate_input(event, row, col):
             cell = event.widget
