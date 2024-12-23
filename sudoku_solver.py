@@ -7,6 +7,7 @@ class SudokuSolverCSP:
         self.variables = [(r, c) for r in range(9) for c in range(9)]  # 81 variables (positions)
         self.domains = self.set_domains()  # domain of each variable (initially from 1->9) if not assigned
         self.arcs = self.generate_arcs() # all arcs between variables
+        self.steps_queue = []  # queue to store the steps of the solution
 
     def set_domains(self):
         domains = {}
@@ -70,6 +71,11 @@ class SudokuSolverCSP:
                 print(f"{x} -> {self.domains[x]}")
                 print(f"{y} -> {self.domains[y]}")
                 print()
+
+                if len(self.domains[x]) == 1:  # Domain reduced to a single value
+                    # Add the variable and its fixed value to the queue
+                    self.steps_queue.append((x, next(iter(self.domains[x]))))
+
         return revised
 
 
@@ -150,6 +156,12 @@ class SudokuSolverCSP:
             self.domains = old_domains
         return False
 
+    def display_steps(self):
+        print("Steps to solve the Sudoku:")
+        for step in self.steps_queue:
+            print(f"Set position {step[0]} to {step[1]}")
+
+
 # Example usage
 puzzle = [
     [7, 9, 0, 0, 1, 3, 6, 0, 0],
@@ -176,11 +188,12 @@ puzzle2 = [
 ]
 
 
-solver = SudokuSolverCSP(puzzle2)
+solver = SudokuSolverCSP(puzzle)
 if solver.solve():
     print("Sudoku solved:")
     for row in solver.puzzle:
         print(row)
+    solver.display_steps()
 else:
     print("No solution exists.")
 
