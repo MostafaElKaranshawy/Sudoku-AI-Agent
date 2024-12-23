@@ -1,4 +1,5 @@
 import copy
+import random
 from time import sleep
 import customtkinter as ctk
 from tkinter import messagebox
@@ -6,21 +7,6 @@ import numpy as np
 from functools import partial
 
 from sudoku_solver import SudokuSolverCSP
-
-
-
-puzzle2 = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0]
-]
-
 
 # Sudoku Solver using Backtracking Algorithm
 def solve_sudoku(board):
@@ -121,13 +107,13 @@ class SudokuApp:
         self.game_mode = None
         self.app = ctk.CTk()
         self.app.title("Sudoku")
-        self.app.geometry("1000x1000")
+        self.app.geometry("800x800")
         self.board = np.zeros((9, 9), dtype=int)
 
         self.main_menu()
 
     def main_menu(self):
-        self.clear_board()
+        # self.clear_board()
         for widget in self.app.winfo_children():
             widget.destroy()
 
@@ -174,6 +160,10 @@ class SudokuApp:
 
     # if value was 0 =>>    solver.domains[(0 , 4)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
+            # solution_count = self.count_solutions(temp_board)
+
+            # if solution_count != 1:
+            #     self.board[row][col] = temp  # Revert if not a valid removal
 
     def start_game(self):
 
@@ -185,8 +175,7 @@ class SudokuApp:
             self.show_board(mode=2)
             self.handle_user_input_mode()
         elif self.game_mode.get() == "User Mode":
-            self.generate_board()
-            self.show_board(mode=3)
+
             self.handle_user_mode()
 
     def generate_board(self):
@@ -199,24 +188,20 @@ class SudokuApp:
         solver = SudokuSolverCSP(self.board)
         solver.solve()
         self.board = solver.puzzle
+        solved_board = copy.deepcopy(self.board)
 
         # Remove numbers based on difficulty while ensuring a unique solution
         difficulty_map = {"Easy": 54, "Medium": 36, "Hard": 18}
         cells_to_remove = 81 - difficulty_map[self.difficulty.get()]
-        removed_cells = []
+        all_cells = [(row, col) for row in range(9) for col in range(9)]
 
-        while len(removed_cells) < cells_to_remove:
-            row, col = np.random.randint(0, 9, size=2)
-            if (row, col) not in removed_cells:
-                temp = self.board[row][col]
-                self.board[row][col] = 0
-                temp_board = np.copy(self.board)
-                solution_count = self.count_solutions(temp_board)
-                if solution_count == 1:
-                    removed_cells.append((row, col))
-                else:
-                    self.board[row][col] = temp
+        while len(all_cells) > 81 - cells_to_remove:
+            # Randomly select an index from all_cells
+            random_index = random.randint(0, len(all_cells) - 1)
+            row, col = all_cells.pop(random_index)  # Remove and get the selected cell
 
+            self.board[row][col] = 0
+        return solved_board
 
     def count_solutions(self, board):
         # Helper function to count the number of solutions
@@ -259,7 +244,7 @@ class SudokuApp:
             for j in range(9):
                 value = self.board[i][j]
                 color = "black" if value != 0 else "gray"
-                entry = ctk.CTkEntry(frame, width=80, height=80, justify="center", fg_color=color, font=("Arial", 20))
+                entry = ctk.CTkEntry(frame, width=60, height=60, justify="center", fg_color=color, font=("Arial", 20))
                 entry.insert(0, value if value != 0 else "")
                 entry.configure(state="disabled" if value != 0 or mode == 1 else "normal")
                 padx = 12 if j % 3 == 0 else 3
@@ -291,7 +276,7 @@ class SudokuApp:
             for j in range(9):
                 if self.cells[i][j].get().isdigit():
                     self.board[i][j] = int(self.cells[i][j].get())
-
+        temp = copy.deepcopy(self.board)
         if not is_valid_board(self.board):
             messagebox.showerror(title="Invalid Board", message="Each number in the board cannot be repeated in a row, "
                                                                "a column or in a 3x3 grid")
@@ -310,8 +295,7 @@ class SudokuApp:
                 (i, j) = step[0]
                 self.cells[i][j].delete(0, "end")
                 self.cells[i][j].configure(state="normal")
-
-                self.cells[i][j].insert(0, self.board[i][j])
+                self.cells[i][j].insert(0, step[1])
                 self.cells[i][j].configure(fg_color="green")
                 self.cells[i][j].configure(state="disabled")
                 self.app.update()
@@ -320,6 +304,7 @@ class SudokuApp:
             self.solve_button.configure(text="New Game", command=self.start_game, state="normal")
         else:
             messagebox.showerror("Error", "No solution exists for the provided board.")
+        print(temp)
     def handle_user_input_mode(self):
 
         self.solve_button.configure(state="disabled")
@@ -329,7 +314,7 @@ class SudokuApp:
 
             value = cell.get()
 
-            temp_board = np.copy(self.board)
+            temp_board = copy.deepcopy(self.board)
             solver = SudokuSolverCSP(temp_board)
 
             if value == '':
@@ -340,6 +325,7 @@ class SudokuApp:
                 return
             if not 1 <= int(value) <= 9:
                 self.cells[row][col].configure(fg_color="red")
+                self.solve_button.configure(state="disabled")
                 self.board[row][col] = 0
                 return
 
@@ -362,9 +348,10 @@ class SudokuApp:
 
 
     def handle_user_mode(self):
+        solved_board = self.generate_board()
+        self.show_board(mode=3)
+
         self.solve_button.configure(state="disabled")
-        solved_board = np.copy(self.board)
-        solve_sudoku(solved_board)
         def validate_input(event, row, col):
 
             cell = event.widget
@@ -396,14 +383,13 @@ class SudokuApp:
                 self.cells[row][col].configure(state="disabled")
 
                 # Check if the board is complete and valid
-                if is_board_complete_and_valid(self.board):
-                    messagebox.showinfo("Congratulations!", "You successfully completed the Sudoku!")
-        if is_board_complete_and_valid(self.board):
-            if messagebox.askyesno(title="Game Finished",
-                                   message="You have solved the Sudoku!\nDoy you want to play again?"):
-                self.start_game()
-            else:
-                self.main_menu()
+            if is_board_complete_and_valid(self.board):
+                if messagebox.askyesno(title="Game Finished",
+                                       message="You have solved the Sudoku!\nDoy you want to play again?"):
+                    self.start_game()
+                else:
+                    self.main_menu()
+
         for i in range(9):
             for j in range(9):
                     self.cells[i][j].bind("<KeyRelease>", partial(validate_input,row=i, col=j))
@@ -415,6 +401,7 @@ class SudokuApp:
             exit()
         else:
             return
+
 if __name__ == "__main__":
     app = SudokuApp()
     app.run()

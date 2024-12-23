@@ -114,18 +114,17 @@ class SudokuSolverCSP:
         for position, domain in self.domains.items():
             self.puzzle[position[0]][position[1]] = next(iter(domain))
 
-
     def solve(self):
         if not self.apply_arc_consistency():
             return False
 
         result = self.backtrack()
         if result:
-           self.fill_puzzle()
-           return True
+            self.fill_rest_of_steps()
+            self.fill_puzzle()
+            return True
 
         return False
-        # return self.backtrack()
 
     def backtrack(self):
 
@@ -148,12 +147,14 @@ class SudokuSolverCSP:
         # try assigning each value to the variable
         for value in to_be_shuffled_values:
             old_domains = copy.deepcopy(self.domains)
+            old_steps_queue = copy.deepcopy(self.steps_queue)
             self.domains[var] = {value}  # (0, 2)
             if self.apply_arc_consistency():
                 if self.backtrack():
                     return True
 
             self.domains = old_domains
+            self.steps_queue = old_steps_queue
         return False
 
     def display_steps(self):
@@ -161,6 +162,16 @@ class SudokuSolverCSP:
         for step in self.steps_queue:
             print(f"Set position {step[0]} to {step[1]}")
 
+    def fill_rest_of_steps(self):
+        steps_set = set()
+        for i in range(len(self.steps_queue)):
+            steps_set.add(self.steps_queue[i][0])
+
+        for r in range(9):
+            for c in range(9):
+                if (r, c) not in steps_set and self.puzzle[r][c] == 0:
+                    self.steps_queue.append(((r, c), next(iter(self.domains[(r, c)]))))
+                    steps_set.add((r, c))
 
 # Example usage
 puzzle = [
