@@ -103,11 +103,6 @@ class SudokuSolverCSP:
                     neighbors.add((i, j))
         return neighbors
 
-    # def assign_singletons(self):
-    #     """Assign values to cells with singleton domains."""
-    #     for cell, domain in self.domains.items():
-    #         if len(domain) == 1:
-    #             self.puzzle[cell[0]][cell[1]] = list(domain)[0]
 
     def fill_puzzle(self):
         for position, domain in self.domains.items():
@@ -139,16 +134,15 @@ class SudokuSolverCSP:
         unassigned_vars = [var for var in self.variables if len(self.domains[var]) > 1]
         var = min(unassigned_vars, key=lambda var: len(self.domains[var]))
 
-        # var = min((v for v in self.variables if len(self.domains[v]) > 1), key=lambda v: len(self.domains[v]))
 
         # Shuffle the values to be assigned to the variable to generate random solutions if multiple solutions exist
         to_be_shuffled_values = list(self.domains[var])
         random.shuffle(to_be_shuffled_values)
 
-        # for value in self.domains[var]:
+        # try assigning each value to the variable
         for value in to_be_shuffled_values:
             old_domains = copy.deepcopy(self.domains)
-            self.domains[var] = {value}
+            self.domains[var] = {value}  # (0, 2)
             if self.apply_arc_consistency():
                 if self.backtrack():
                     return True
@@ -189,3 +183,20 @@ if solver.solve():
         print(row)
 else:
     print("No solution exists.")
+
+#  Mode 1
+#    easy => 3x
+#   medium => 2x
+#   hard => 18
+#
+#
+#  Mode 2
+#
+#
+#
+#
+#
+#  Mode 3 bonus
+#
+#
+#

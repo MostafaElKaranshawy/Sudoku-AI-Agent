@@ -4,6 +4,23 @@ from tkinter import messagebox
 import numpy as np
 from functools import partial
 
+from sudoku_solver import SudokuSolverCSP
+
+
+
+puzzle2 = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+
 # Sudoku Solver using Backtracking Algorithm
 def solve_sudoku(board):
     empty = find_empty(board)
@@ -145,6 +162,22 @@ class SudokuApp:
         exit_button = ctk.CTkButton(frame, text="Exit Game", command=self.exit,
                                     font=("Arial", 24), fg_color="red")
         exit_button.pack(pady=10)
+
+        solver = SudokuSolverCSP(puzzle2)
+
+    #   for loop until at least 18
+    #   input =>  (0 , 4)   6
+    #
+    #   old_domains = copy.deepcopy(solver.domains)
+    #
+    #   solver.domains[(0 , 4)] = {6}
+    #   solver.puzzle[0][4] = 6
+    #   solver.apply_arc_consistency()
+    #   if False:
+    #      solver.domains = old_domains
+
+
+    # if value was 0 =>>    solver.domains[(0 , 4)] = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 
     def start_game(self):
